@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Valores</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #resultado {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Calculadora de Valores</h2>
+        <label for="valorInicial">Insira o valor inicial (R$):</label>
+        <input type="number" id="valorInicial" step="0.01" min="0" placeholder="Ex.: 500.00" required>
+        
+        <label for="adultos">Quantidade de adultos (máx. 4):</label>
+        <input type="number" id="adultos" min="0" max="4" value="0" placeholder="0 a 4" required>
+        
+        <label for="criancas">Quantidade de crianças (máx. 4):</label>
+        <input type="number" id="criancas" min="0" max="4" value="0" placeholder="0 a 4" required>
+        
+        <button onclick="calcular()">Calcular</button>
+        
+        <div id="resultado"></div>
+    </div>
+    <script>
+        function calcular() {
+            const valorInicial = parseFloat(document.getElementById('valorInicial').value);
+            const adultos = parseInt(document.getElementById('adultos').value);
+            const criancas = parseInt(document.getElementById('criancas').value);
+            const resultadoDiv = document.getElementById('resultado');
+
+            // Validações
+            if (isNaN(valorInicial) || valorInicial <= 0) {
+                resultadoDiv.innerHTML = "Por favor, insira um valor inicial válido.";
+                return;
+            }
+            if (adultos < 0 || adultos > 6 || isNaN(adultos)) {
+                resultadoDiv.innerHTML = "Quantidade de adultos deve ser entre 0 e 4.";
+                return;
+            }
+            if (criancas < 0 || criancas > 4 || isNaN(criancas)) {
+                resultadoDiv.innerHTML = "Quantidade de crianças deve ser entre 0 e 4.";
+                return;
+            }
+
+            // Cálculo: valor inicial + 2%
+            const valorComAcrescimo = valorInicial * 1.02;
+
+            // Cálculo: descontos por adultos e crianças
+            const descontoAdultos = adultos * 22;
+            const descontoCriancas = criancas * 11;
+            const totalDescontos = descontoAdultos + descontoCriancas;
+            const valorComDescontos = valorComAcrescimo - totalDescontos;
+
+            // Divisão final por 1.02
+            const valorFinal = valorComDescontos / 1.02;
+
+            // Soma do valor final + total dos descontos
+            const valorFinalMaisDescontos = valorFinal + totalDescontos;
+
+            // Exibir resultado formatado
+            resultadoDiv.innerHTML = `
+                <p>Valor inicial: R$${valorInicial.toFixed(2)}</p>
+                <p>Cafés por adultos (${adultos} x R$22,00): R$${descontoAdultos.toFixed(2)}</p>
+                <p>Cafés por crianças (${criancas} x R$11,00): R$${descontoCriancas.toFixed(2)}</p>
+                <p>Total dos Cafés: R$${totalDescontos.toFixed(2)}</p>
+                <p>Valor p diaria: R$${valorFinal.toFixed(2)}</p>
+                <p>Valor final: R$${valorFinalMaisDescontos.toFixed(2)}</p>
+            `;
+        }
+    </script>
+</body>
+</html>

@@ -74,7 +74,7 @@
                 resultadoDiv.innerHTML = "Por favor, insira um valor inicial válido.";
                 return;
             }
-            if (adultos < 0 || adultos > 6 || isNaN(adultos)) {
+            if (adultos < 0 || adultos > 4 || isNaN(adultos)) {
                 resultadoDiv.innerHTML = "Quantidade de adultos deve ser entre 0 e 4.";
                 return;
             }
@@ -83,8 +83,9 @@
                 return;
             }
 
-            // Cálculo: valor inicial + 2%
-            const valorComAcrescimo = valorInicial * 1.02;
+            // Cálculo: valor inicial + 2%, arredondado com base na terceira casa decimal
+            const valorComAcrescimoRaw = valorInicial * 1.02;
+            const valorComAcrescimo = Number((Math.round(valorComAcrescimoRaw * 1000) / 1000).toFixed(2));
 
             // Cálculo: descontos por adultos e crianças
             const descontoAdultos = adultos * 22;

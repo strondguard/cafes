@@ -1,4 +1,43 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -17,6 +56,36 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 10px;
+            background-color: #e0e0e0;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+        }
+        .tab-button.active {
+            background-color: #28a745;
+            color: white;
+        }
+        .tab-button:hover {
+            background-color: #d0d0d0;
+        }
+        .tab-button.active:hover {
+            background-color: #218838;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
         }
         label {
             display: block;
@@ -40,7 +109,7 @@
         button:hover {
             background-color: #218838;
         }
-        #resultado {
+        .resultado {
             margin-top: 20px;
             font-weight: bold;
         }
@@ -49,25 +118,67 @@
 <body>
     <div class="container">
         <h2>Calculadora de Valores</h2>
-        <label for="valorInicial">Insira o valor inicial (R$):</label>
-        <input type="number" id="valorInicial" step="0.01" min="0" placeholder="Ex.: 500.00" required>
-        
-        <label for="adultos">Quantidade de adultos (máx. 4):</label>
-        <input type="number" id="adultos" min="0" max="4" value="0" placeholder="0 a 4" required>
-        
-        <label for="criancas">Quantidade de crianças (máx. 4):</label>
-        <input type="number" id="criancas" min="0" max="4" value="0" placeholder="0 a 4" required>
-        
-        <button onclick="calcular()">Calcular</button>
-        
-        <div id="resultado"></div>
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab('calcA')">Calculadora A</button>
+            <button class="tab-button" onclick="openTab('calcB')">Calculadora B</button>
+        </div>
+
+        <div id="calcA" class="tab-content active">
+            <label for="valorInicialA">Insira o valor inicial (R$):</label>
+            <input type="number" id="valorInicialA" step="0.01" min="0" placeholder="Ex.: 500.00" required>
+            
+            <label for="adultosA">Quantidade de adultos (máx. 4):</label>
+            <input type="number" id="adultosA" min="0" max="4" value="0" placeholder="0 a 4" required>
+            
+            <label for="criancasA">Quantidade de crianças (máx. 4):</label>
+            <input type="number" id="criancasA" min="0" max="4" value="0" placeholder="0 a 4" required>
+            
+            <button onclick="calcularA()">Calcular</button>
+            
+            <div id="resultadoA" class="resultado"></div>
+        </div>
+
+        <div id="calcB" class="tab-content">
+            <label for="valorInicialB">Insira o valor inicial (R$):</label>
+            <input type="number" id="valorInicialB" step="0.01" min="0" placeholder="Ex.: 500.00" required>
+            
+            <label for="adultosB">Quantidade de adultos (máx. 4):</label>
+            <input type="number" id="adultosB" min="0" max="4" value="0" placeholder="0 a 4" required>
+            
+            <label for="criancasB">Quantidade de crianças (máx. 4):</label>
+            <input type="number" id="criancasB" min="0" max="4" value="0" placeholder="0 a 4" required>
+            
+            <button onclick="calcularB()">Calcular</button>
+            
+            <div id="resultadoB" class="resultado"></div>
+        </div>
     </div>
     <script>
-        function calcular() {
-            const valorInicial = parseFloat(document.getElementById('valorInicial').value);
-            const adultos = parseInt(document.getElementById('adultos').value);
-            const criancas = parseInt(document.getElementById('criancas').value);
-            const resultadoDiv = document.getElementById('resultado');
+        function openTab(tabName) {
+            // Hide all tab contents
+            const tabs = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].style.display = 'none';
+                tabs[i].classList.remove('active');
+            }
+            // Show the selected tab
+            const selectedTab = document.getElementById(tabName);
+            selectedTab.style.display = 'block';
+            selectedTab.classList.add('active');
+
+            // Update button styles
+            const buttons = document.getElementsByClassName('tab-button');
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
+            document.querySelector(`[onclick="openTab('${tabName}')"]`).classList.add('active');
+        }
+
+        function calcularA() {
+            const valorInicial = parseFloat(document.getElementById('valorInicialA').value);
+            const adultos = parseInt(document.getElementById('adultosA').value);
+            const criancas = parseInt(document.getElementById('criancasA').value);
+            const resultadoDiv = document.getElementById('resultadoA');
 
             // Validações
             if (isNaN(valorInicial) || valorInicial <= 0) {
@@ -109,6 +220,49 @@
                 <p>Valor final: R$${valorFinalMaisDescontos.toFixed(2)}</p>
             `;
         }
+
+        function calcularB() {
+            const valorInicial = parseFloat(document.getElementById('valorInicialB').value);
+            const adultos = parseInt(document.getElementById('adultosB').value);
+            const criancas = parseInt(document.getElementById('criancasB').value);
+            const resultadoDiv = document.getElementById('resultadoB');
+
+            // Validações
+            if (isNaN(valorInicial) || valorInicial <= 0) {
+                resultadoDiv.innerHTML = "Por favor, insira um valor inicial válido.";
+                return;
+            }
+            if (adultos < 0 || adultos > 4 || isNaN(adultos)) {
+                resultadoDiv.innerHTML = "Quantidade de adultos deve ser entre 0 e 4.";
+                return;
+            }
+            if (criancas < 0 || criancas > 4 || isNaN(criancas)) {
+                resultadoDiv.innerHTML = "Quantidade de crianças deve ser entre 0 e 4.";
+                return;
+            }
+
+            // Cálculo: descontos por adultos e crianças
+            const descontoAdultos = adultos * 22;
+            const descontoCriancas = criancas * 11;
+            const totalDescontos = descontoAdultos + descontoCriancas;
+            const valorComDescontos = valorInicial - totalDescontos;
+
+            // Divisão por 1.02, arredondado com base na terceira casa decimal
+            const valorFinalRaw = valorComDescontos / 1.02;
+            const valorFinal = Number((Math.round(valorFinalRaw * 1000) / 1000).toFixed(2));
+
+            // Exibir resultado formatado
+            resultadoDiv.innerHTML = `
+                <p>Valor inicial: R$${valorInicial.toFixed(2)}</p>
+                <p>Cafés por adultos (${adultos} x R$22,00): R$${descontoAdultos.toFixed(2)}</p>
+                <p>Cafés por crianças (${criancas} x R$11,00): R$${descontoCriancas.toFixed(2)}</p>
+                <p>Total dos Cafés: R$${totalDescontos.toFixed(2)}</p>
+                <p>Valor final: R$${valorFinal.toFixed(2)}</p>
+            `;
+        }
+
+        // Initialize by ensuring Calculadora A is visible
+        openTab('calcA');
     </script>
 </body>
 </html>

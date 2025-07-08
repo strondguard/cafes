@@ -248,7 +248,7 @@
             const valorComDescontos = valorInicial - totalDescontos;
 
             // Divisão por 1.02, arredondado com base na terceira casa decimal
-            const valorFinalRaw = valorComDescontos / 1.02;
+            const valorFinalRaw = valorComDescontos / 1.02 + totalDescontos;
             const valorFinal = Number((Math.round(valorFinalRaw * 1000) / 1000).toFixed(2));
 
             // Exibir resultado formatado

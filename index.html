@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -91,12 +52,15 @@
             display: block;
             margin: 10px 0 5px;
         }
-        input {
+        input[type="number"] {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
+        }
+        input[type="checkbox"] {
+            margin: 10px 5px 10px 0;
         }
         button {
             padding: 10px 20px;
@@ -133,6 +97,10 @@
             <label for="criancasA">Quantidade de crianças (máx. 4):</label>
             <input type="number" id="criancasA" min="0" max="4" value="0" placeholder="0 a 4" required>
             
+            <label for="jantaA">
+                <input type="checkbox" id="jantaA"> Inserir Janta
+            </label>
+            
             <button onclick="calcularA()">Calcular</button>
             
             <div id="resultadoA" class="resultado"></div>
@@ -148,12 +116,55 @@
             <label for="criancasB">Quantidade de crianças (máx. 4):</label>
             <input type="number" id="criancasB" min="0" max="4" value="0" placeholder="0 a 4" required>
             
+            <label for="jantaB">
+                <input type="checkbox" id="jantaB"> Inserir Janta
+            </label>
+            
             <button onclick="calcularB()">Calcular</button>
             
             <div id="resultadoB" class="resultado"></div>
         </div>
     </div>
-    <script>
+    <script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+
+                    // Convert sheet to JSON to filter blank rows
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                    // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    // Fallback
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+
+                    // Convert filtered JSON back to CSV
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+
         function openTab(tabName) {
             // Hide all tab contents
             const tabs = document.getElementsByClassName('tab-content');
@@ -178,6 +189,7 @@
             const valorInicial = parseFloat(document.getElementById('valorInicialA').value);
             const adultos = parseInt(document.getElementById('adultosA').value);
             const criancas = parseInt(document.getElementById('criancasA').value);
+            const incluirJanta = document.getElementById('jantaA').checked;
             const resultadoDiv = document.getElementById('resultadoA');
 
             // Validações
@@ -198,13 +210,21 @@
             const valorComAcrescimoRaw = valorInicial * 1.02;
             const valorComAcrescimo = Number((Math.round(valorComAcrescimoRaw * 1000) / 1000).toFixed(2));
 
-            // Cálculo: descontos por adultos e crianças
-            const descontoAdultos = adultos * 22;
-            const descontoCriancas = criancas * 11;
-            const totalDescontos = descontoAdultos + descontoCriancas;
-            const valorComDescontos = valorComAcrescimo - totalDescontos;
+            // Cálculo: descontos por adultos e crianças (Cafés)
+            const descontoAdultosCafe = adultos * 22;
+            const descontoCriancasCafe = criancas * 11;
+            const totalDescontosCafe = descontoAdultosCafe + descontoCriancasCafe;
+
+            // Cálculo: descontos por janta, se incluída
+            const descontoAdultosJanta = incluirJanta ? adultos * 65 : 0;
+            const descontoCriancasJanta = incluirJanta ? criancas * 32.50 : 0;
+            const totalDescontosJanta = descontoAdultosJanta + descontoCriancasJanta;
+
+            // Total de todos os descontos
+            const totalDescontos = totalDescontosCafe + totalDescontosJanta;
 
             // Divisão final por 1.02
+            const valorComDescontos = valorComAcrescimo - totalDescontos;
             const valorFinal = valorComDescontos / 1.02;
 
             // Soma do valor final + total dos descontos
@@ -213,11 +233,13 @@
             // Exibir resultado formatado
             resultadoDiv.innerHTML = `
                 <p>Valor inicial: R$${valorInicial.toFixed(2)}</p>
-                <p>Cafés por adultos (${adultos} x R$22,00): R$${descontoAdultos.toFixed(2)}</p>
-                <p>Cafés por crianças (${criancas} x R$11,00): R$${descontoCriancas.toFixed(2)}</p>
-                <p>Total dos Cafés: R$${totalDescontos.toFixed(2)}</p>
+                <p>Total dos Cafés: R$${totalDescontosCafe.toFixed(2)}</p>
+                ${incluirJanta ? `
+                    <p>Total das Jantas: R$${totalDescontosJanta.toFixed(2)}</p>
+                ` : ''}
+                <p>Total dos Descontos: R$${totalDescontos.toFixed(2)}</p>
                 <p>Valor p diaria: R$${valorFinal.toFixed(2)}</p>
-                <p>Valor final: R$${valorFinalMaisDescontos.toFixed(2)}</p>
+                <p><mark>Valor final: R$${valorFinalMaisDescontos.toFixed(2)}</mark></p>
             `;
         }
 
@@ -225,6 +247,7 @@
             const valorInicial = parseFloat(document.getElementById('valorInicialB').value);
             const adultos = parseInt(document.getElementById('adultosB').value);
             const criancas = parseInt(document.getElementById('criancasB').value);
+            const incluirJanta = document.getElementById('jantaB').checked;
             const resultadoDiv = document.getElementById('resultadoB');
 
             // Validações
@@ -241,23 +264,33 @@
                 return;
             }
 
-            // Cálculo: descontos por adultos e crianças
-            const descontoAdultos = adultos * 22;
-            const descontoCriancas = criancas * 11;
-            const totalDescontos = descontoAdultos + descontoCriancas;
-            const valorComDescontos = valorInicial - totalDescontos;
+            // Cálculo: descontos por adultos e crianças (Cafés)
+            const descontoAdultosCafe = adultos * 22;
+            const descontoCriancasCafe = criancas * 11;
+            const totalDescontosCafe = descontoAdultosCafe + descontoCriancasCafe;
+
+            // Cálculo: descontos por janta, se incluída
+            const descontoAdultosJanta = incluirJanta ? adultos * 65 : 0;
+            const descontoCriancasJanta = incluirJanta ? criancas * 32.50 : 0;
+            const totalDescontosJanta = descontoAdultosJanta + descontoCriancasJanta;
+
+            // Total de todos os descontos
+            const totalDescontos = totalDescontosCafe + totalDescontosJanta;
 
             // Divisão por 1.02, arredondado com base na terceira casa decimal
+            const valorComDescontos = valorInicial - totalDescontos;
             const valorFinalRaw = valorComDescontos / 1.02 + totalDescontos;
             const valorFinal = Number((Math.round(valorFinalRaw * 1000) / 1000).toFixed(2));
 
             // Exibir resultado formatado
             resultadoDiv.innerHTML = `
                 <p>Valor inicial: R$${valorInicial.toFixed(2)}</p>
-                <p>Cafés por adultos (${adultos} x R$22,00): R$${descontoAdultos.toFixed(2)}</p>
-                <p>Cafés por crianças (${criancas} x R$11,00): R$${descontoCriancas.toFixed(2)}</p>
-                <p>Total dos Cafés: R$${totalDescontos.toFixed(2)}</p>
-                <p>Valor final: R$${valorFinal.toFixed(2)}</p>
+                <p>Total dos Cafés: R$${totalDescontosCafe.toFixed(2)}</p>
+                ${incluirJanta ? `
+                    <p>Total das Jantas: R$${totalDescontosJanta.toFixed(2)}</p>
+                ` : ''}
+                <p>Total dos Descontos: R$${totalDescontos.toFixed(2)}</p>
+                <p><mark>Valor final: R$${valorFinal.toFixed(2)}</mark></p>
             `;
         }
 

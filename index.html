@@ -77,6 +77,10 @@
             margin-top: 20px;
             font-weight: bold;
         }
+        .checkbox-container{
+            display: flex;
+            justify-content: right;
+        }
     </style>
 </head>
 <body>
@@ -97,9 +101,11 @@
             <label for="criancasA">Quantidade de crianças (máx. 4):</label>
             <input type="number" id="criancasA" min="0" max="4" value="0" placeholder="0 a 4" required>
             
-            <label for="jantaA">
-                <input type="checkbox" id="jantaA"> Meia Pensão
-            </label>
+            <div class="checkbox-container">
+                <label for="jantaA">
+                    <input type="checkbox" id="jantaA"> Meia Pensão
+                </label>
+            </div>
             
             <button onclick="calcularA()">Calcular</button>
             
@@ -116,9 +122,11 @@
             <label for="criancasB">Quantidade de crianças (máx. 4):</label>
             <input type="number" id="criancasB" min="0" max="4" value="0" placeholder="0 a 4" required>
             
-            <label for="jantaB">
-                <input type="checkbox" id="jantaB">Meia Pensão
-            </label>
+            <div class="checkbox-container">
+                <label for="jantaB">
+                    <input type="checkbox" id="jantaB">Meia Pensão
+                </label>
+            </div>
             
             <button onclick="calcularB()">Calcular</button>
             
